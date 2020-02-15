@@ -19,6 +19,6 @@ class Audio2Audio16Bit:
         for audio in dataset.observations:
             audio = audio.as_16_bit_pcm()
             if self.normalize_amplitude:
-                audio.time_series /= 2 ** 15
+                audio.time_series = audio.time_series / (2 ** 15)
             observations.append(audio)
         return Dataset(observations=np.array(observations), labels=np.array(dataset.labels))
