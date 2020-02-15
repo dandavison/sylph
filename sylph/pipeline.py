@@ -9,6 +9,7 @@ from typing_extensions import Protocol
 
 import numpy as np
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import confusion_matrix
 
 from sylph.classifier import Classifier
 from sylph.dataset import Dataset
@@ -77,6 +78,9 @@ class TrainingPipeline:
                 output["transformed_testing_dataset_predictions"],
             ),
             "testing_accuracy": accuracy_score(
+                dataset.testing_dataset.labels, testing_dataset_predictions
+            ),
+            "testing_confusion_matrix": confusion_matrix(
                 dataset.testing_dataset.labels, testing_dataset_predictions
             ),
         }
