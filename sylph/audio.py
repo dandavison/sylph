@@ -1,6 +1,8 @@
 from dataclasses import dataclass
+from tempfile import NamedTemporaryFile
 
 import numpy as np
+import soundfile
 
 from sylph.utils import librosa as librosa_utils
 
@@ -14,6 +16,14 @@ class Audio:
     def from_file(cls, path):
         ts, sr = librosa_utils.load(path)
         return cls(time_series=ts, sampling_rate=sr)
+
+    def as_16_bit_pcm(self):
+        with NamedTemporaryFile(suffix=".wav") as fp:
+            path = fp.name
+            soundfile.write(path, self.time_series, self.sampling_rate, subtype="PCM_16")
+            ts, sr = soundfile.read(path, dtype="int16")
+        assert ts.dtype == "int16"
+        return type(self)(time_series=ts, sampling_rate=sr)
 
     def __repr__(self):
         _type = type(self).__name__
