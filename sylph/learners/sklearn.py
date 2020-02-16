@@ -5,7 +5,7 @@ import numpy as np
 import sklearn.base
 
 from sylph.classifier import Classifier
-from sylph.dataset import Dataset
+from sylph.dataset import DataSet
 from sylph.pipeline import Learner
 from sylph.utils.numpy import unpack_objects
 
@@ -24,12 +24,12 @@ class SklearnClassifier(Classifier):
 
 class SklearnClassifierLearner(Learner):
     """
-    Takes a Dataset and outputs a SklearnClassifier.
+    Takes a DataSet and outputs a SklearnClassifier.
     """
 
     model: sklearn.base.ClassifierMixin
 
-    def __call__(self, dataset: Dataset) -> SklearnClassifier:
+    def __call__(self, dataset: DataSet) -> SklearnClassifier:
         X, y = dataset.observations, dataset.labels
         X, y = map(unpack_objects, (X, y))
         model = self.model.fit(X, y)

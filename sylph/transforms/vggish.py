@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import tensorflow.compat.v1 as tf
 
-from sylph.dataset import Dataset
+from sylph.pipeline import Transform
 from sylph.vendor.tensorflow_models.research.audioset.vggish import vggish_input
 from sylph.vendor.tensorflow_models.research.audioset.vggish import vggish_params
 from sylph.vendor.tensorflow_models.research.audioset.vggish import vggish_slim
@@ -13,22 +13,25 @@ from sylph.vendor.tensorflow_models.research.audioset.vggish import vggish_slim
 tf.disable_v2_behavior()
 
 
-class Audio2Spectrogram:
-    def __call__(self, dataset: Dataset) -> Dataset:
-        spectrograms = [
+class Audio2Spectrogram(Transform):
+    def transform_observations(self, audios: np.ndarray):
+        """
+        Each audio file is broken into non-overlapping time windows, and a spectrogram is computed
+        for each window. All time windows, across all audio files, have the same duration.
+        """
+        # The audioset VGGish code refers to a spectrogram from a window as an "example".
+        window_spectrograms = [
             vggish_input.waveform_to_examples(audio.time_series, audio.sampling_rate)
-            for audio in dataset.observations
+            for audio in audios
         ]
-        n_examples_per_audio = [s.shape[0] for s in spectrograms]
-        observations = np.concatenate(spectrograms, axis=0)
-        labels = np.repeat(dataset.labels, n_examples_per_audio)
-        dataset = Dataset(observations=observations, labels=labels)
-        dataset.n_examples_per_audio = n_examples_per_audio  # Hack
-        return dataset
+        n_windows_per_audio = [s.shape[0] for s in window_spectrograms]
+        window_spectrograms = np.concatenate(window_spectrograms, axis=0)
+        index_map = np.repeat(range(len(audios)), n_windows_per_audio)
+        return window_spectrograms, index_map
 
 
-class Spectrogram2VGGishEmbeddings:
-    def __call__(self, dataset: Dataset) -> Dataset:
+class Spectrogram2VGGishEmbeddings(Transform):
+    def transform_observations(self, spectrograms: np.ndarray):
         vggish_checkpoint_path = os.getenv("SYLPH_VGGISH_MODEL_CHECKPOINT_FILE")
         if not vggish_checkpoint_path:
             raise AssertionError(
@@ -42,11 +45,5 @@ class Spectrogram2VGGishEmbeddings:
             vggish_slim.load_vggish_slim_checkpoint(sess, vggish_checkpoint_path)
             features_tensor = sess.graph.get_tensor_by_name(vggish_params.INPUT_TENSOR_NAME)
             embedding_tensor = sess.graph.get_tensor_by_name(vggish_params.OUTPUT_TENSOR_NAME)
-            [embedding_batch] = sess.run(
-                [embedding_tensor], feed_dict={features_tensor: dataset.observations}
-            )
-        # Hack
-        n_examples_per_audio = dataset.n_examples_per_audio
-        dataset = Dataset(observations=embedding_batch, labels=dataset.labels)
-        dataset.n_examples_per_audio = n_examples_per_audio
-        return dataset
+            [embeddings] = sess.run([embedding_tensor], feed_dict={features_tensor: spectrograms})
+        return embeddings, None

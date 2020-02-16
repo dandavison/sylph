@@ -2,9 +2,11 @@
 The interface of this module is intended to be compatible with torchvision.Transform and
 torchvision.Compose.
 """
+from collections import Counter
 from dataclasses import dataclass
 from typing import List
 from typing import Optional
+from typing import Tuple
 from typing_extensions import Protocol
 
 import numpy as np
@@ -12,25 +14,49 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 
 from sylph.classifier import Classifier
-from sylph.dataset import Dataset
-from sylph.utils import get_group_modes
+from sylph.dataset import DataSet
+from sylph.utils import get_group_to_modal_value
 
 
-class Transform(Protocol):
+class Transform:
     """
-    A Transform takes in one Dataset and outputs another.
+    A Transform takes in one DataSet and outputs another.
     """
 
-    def __call__(self, dataset: Dataset) -> Dataset:
+    def transform_observations(self, observations: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Return a 2-tuple:
+
+        1. The transformed observations as a >=1-dimensional numpy array. Let n be the length of
+           the first dimension of this array.
+
+        2. A 1D numpy array of length n, representing a map from the row indices of the transformed
+           data to the row indices of the input data. I.e. Let this array be named Z; if row j of
+           the transformed output derives from row i of the input, then Z[j] = i.
+
+        If the result of the transformation is the same length as the input, and the order of the
+        rows is unchanged, then the second element of the tuple may be None (i.e. use the identity
+        map).
+        """
         raise NotImplementedError
+
+    def __call__(self, dataset: DataSet) -> DataSet:
+        observations, index_map = self.transform_observations(dataset.observations)
+        if index_map is None:
+            index_map = np.arange(len(observations))
+        transformed_columns = {
+            k: v[index_map] for k, v in dataset._columns.items() if k != "observations"
+        }
+        transformed_columns["observations"] = observations
+        return DataSet(transformed_columns)
 
 
 class Learner(Protocol):
     """
-    A Learner takes in a Dataset and outputs a Classifier.
+    A Learner takes in a DataSet and outputs a Classifier.
     """
 
-    def __call__(self, dataset: Dataset) -> Classifier:
+    def __call__(self, dataset: DataSet) -> Classifier:
         raise NotImplementedError
 
 
@@ -38,7 +64,7 @@ class Compose:
     def __init__(self, transforms: List[Transform]):
         self.transforms = transforms
 
-    def __call__(self, dataset: Dataset) -> Dataset:
+    def __call__(self, dataset: DataSet) -> DataSet:
         for transform in self.transforms:
             dataset = transform(dataset)
         return dataset
@@ -65,12 +91,17 @@ class TrainingPipeline:
         }
 
     def get_metrics(self, dataset, output) -> dict:
-        testing_dataset_predictions = np.array(
-            get_group_modes(
-                output["transformed_testing_dataset_predictions"],
-                output["transformed_testing_dataset"].n_examples_per_audio,
-            )
+        group_to_mode = get_group_to_modal_value(
+            group_labels=output["transformed_testing_dataset"]["ids"],
+            values=output["transformed_testing_dataset_predictions"],
         )
+        testing_dataset_ids, testing_dataset_predictions = map(
+            np.array, zip(*sorted(group_to_mode.items()))
+        )
+        assert Counter(testing_dataset_ids) == Counter(dataset.testing_dataset["ids"])
+        original_ids_list = list(dataset.testing_dataset["ids"])
+        original_order = [original_ids_list.index(id) for id in testing_dataset_ids]
+        testing_dataset_predictions = testing_dataset_predictions[original_order]
         return {
             "testing_dataset_predictions": testing_dataset_predictions,
             "transformed_testing_accuracy": accuracy_score(

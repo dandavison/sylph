@@ -1,14 +1,15 @@
-import numpy as np
 import random
 
 import librosa
+import numpy as np
 
 from sylph.audio import Audio
-from sylph.dataset import Dataset
+from sylph.dataset import DataSet
 
 
-class TwoPureTonesDataset(Dataset):
-    def __init__(self, n, duration, **kwargs):
+class TwoPureTonesDataSet(DataSet):
+    @classmethod
+    def generate(cls, n, duration, **kwargs):
         random.seed(0)
         duration = 5
         sampling_rate = 44100
@@ -18,7 +19,8 @@ class TwoPureTonesDataset(Dataset):
         ]
         n1 = int(n / 2)
         n2 = n - n1
-        dataset = [(middle_a_audio, "middle_a")] * n1 + [(high_a_audio, "high_a")] * n2
+        dataset = [(middle_a_audio, "A440")] * n1 + [(high_a_audio, "A880")] * n2
         random.shuffle(dataset)
         observations, labels = map(np.array, zip(*dataset))
-        super().__init__(observations, labels, **kwargs)
+        ids = np.arange(len(observations))
+        return cls({"observations": observations, "ids": ids, "labels": labels}, **kwargs)
