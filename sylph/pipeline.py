@@ -15,7 +15,7 @@ from sklearn.metrics import confusion_matrix
 
 from sylph.classifier import Classifier
 from sylph.dataset import DataSet
-from sylph.utils import get_group_to_modal_value
+from sylph.utils.modal_values import get_modal_values
 
 
 class Transform:
@@ -91,17 +91,13 @@ class TrainingPipeline:
         }
 
     def get_metrics(self, dataset, output) -> dict:
-        group_to_mode = get_group_to_modal_value(
-            group_labels=output["transformed_testing_dataset"]["ids"],
+        id2prediction = get_modal_values(
+            group_ids=output["transformed_testing_dataset"]["ids"],
             values=output["transformed_testing_dataset_predictions"],
         )
-        testing_dataset_ids, testing_dataset_predictions = map(
-            np.array, zip(*sorted(group_to_mode.items()))
+        testing_dataset_predictions = np.array(
+            [id2prediction[id] for id in dataset.testing_dataset["ids"]]
         )
-        assert Counter(testing_dataset_ids) == Counter(dataset.testing_dataset["ids"])
-        original_ids_list = list(dataset.testing_dataset["ids"])
-        original_order = [original_ids_list.index(id) for id in testing_dataset_ids]
-        testing_dataset_predictions = testing_dataset_predictions[original_order]
         return {
             "testing_dataset_predictions": testing_dataset_predictions,
             "transformed_testing_accuracy": accuracy_score(
