@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import numpy as np
 import tensorflow.compat.v1 as tf
@@ -33,6 +34,9 @@ class Spectrogram2VGGishEmbeddings:
             raise AssertionError(
                 "Environment variable SYLPH_VGGISH_MODEL_CHECKPOINT_FILE is not set."
             )
+        if not Path(vggish_checkpoint_path).exists():
+            raise AssertionError(f"File does not exist: {vggish_checkpoint_path}")
+
         with tf.Graph().as_default(), tf.Session() as sess:
             vggish_slim.define_vggish_slim(training=False)
             vggish_slim.load_vggish_slim_checkpoint(sess, vggish_checkpoint_path)
