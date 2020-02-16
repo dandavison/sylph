@@ -3,7 +3,6 @@ from dataclasses import dataclass
 import numpy as np
 
 import sklearn.base
-import sklearn.svm
 
 from sylph.classifier import Classifier
 from sylph.dataset import Dataset
@@ -35,7 +34,3 @@ class SklearnClassifierLearner(Learner):
         X, y = map(unpack_objects, (X, y))
         model = self.model.fit(X, y)
         return SklearnClassifier(model=model)
-
-
-class SVMLearner(SklearnClassifierLearner):
-    model = sklearn.svm.SVC()
