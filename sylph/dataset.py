@@ -52,7 +52,7 @@ class DataSet(DataFrame):
             n_training = int(self.training_proportion * self.n)
             return np.array([i < n_training for i in range(self.n)])
         else:
-            raise ValueError("DataSet requires either `training_rows` or `training_proprtion`")
+            raise ValueError("DataSet requires either `training_rows` or `training_proportion`")
 
     @property
     def training_dataset(self) -> "DataSet":
