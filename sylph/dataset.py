@@ -1,3 +1,4 @@
+from collections import Counter
 from typing import Optional
 
 import numpy as np
@@ -49,8 +50,13 @@ class DataSet(DataFrame):
         if self._training_rows is not None:
             return self._training_rows
         elif self.training_proportion is not None:
-            n_training = int(self.training_proportion * self.n)
-            return np.array([i < n_training for i in range(self.n)])
+            label_counts = Counter(self.labels)
+            is_training = np.array([False] * self.n)
+            for label, label_n in label_counts.items():
+                label_indices = np.nonzero(self.labels == label)[0]
+                label_n_training = int(self.training_proportion * label_n)
+                is_training[label_indices[:label_n_training]] = True
+            return is_training
         else:
             raise ValueError("DataSet requires either `training_rows` or `training_proportion`")
 
