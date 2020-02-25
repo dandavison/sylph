@@ -1,6 +1,4 @@
 import json
-import os
-from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 from typing import Tuple
@@ -21,8 +19,7 @@ class XenoQueroRecording:
     @classmethod
     def from_path(cls, path: Path):
         id, suffix = path.name.split(".")
-        id = int(id)
-        return cls(id)
+        return cls(int(id))
 
     @cached_property
     def metadata(self):
