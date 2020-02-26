@@ -83,10 +83,16 @@ class TrainingPipeline:
         transformed_testing_dataset_predictions = classifier.predict(
             transformed_testing_dataset.observations
         )
+        transformed_testing_dataset_prediction_probs = classifier.predict_proba(
+            transformed_testing_dataset.observations
+        )
         return {
             "classifier": classifier,
             "transformed_testing_dataset": transformed_testing_dataset,
             "transformed_testing_dataset_predictions": transformed_testing_dataset_predictions,
+            "transformed_testing_dataset_prediction_probs": (
+                transformed_testing_dataset_prediction_probs
+            ),
             "transformed_training_dataset": transformed_training_dataset,
         }
 

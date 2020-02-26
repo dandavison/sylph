@@ -21,6 +21,9 @@ class SklearnClassifier(Classifier):
     def predict(self, observations: np.ndarray) -> np.ndarray:
         return self.model.predict(unpack_objects(observations))
 
+    def predict_proba(self, observations: np.ndarray) -> np.ndarray:
+        return self.model.predict_proba(unpack_objects(observations))
+
 
 class SklearnClassifierLearner(Learner):
     """
@@ -28,9 +31,10 @@ class SklearnClassifierLearner(Learner):
     """
 
     model: sklearn.base.ClassifierMixin
+    classifier_cls = SklearnClassifier
 
     def __call__(self, dataset: DataSet) -> SklearnClassifier:
         X, y = dataset.observations, dataset.labels
         X, y = map(unpack_objects, (X, y))
         model = self.model.fit(X, y)
-        return SklearnClassifier(model=model)
+        return self.classifier_cls(model=model)
