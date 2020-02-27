@@ -12,7 +12,10 @@ class SVMClassifier(SklearnClassifier):
     def predict_proba(self, observations: np.ndarray) -> np.ndarray:
         # https://scikit-learn.org/dev/modules/svm.html#scores-and-probabilities
         # https://stackoverflow.com/questions/49507066/predict-probabilities-using-svm
-        return softmax(self.model.decision_function(unpack_objects(observations)))
+        return softmax(self.decision_function(observations))
+
+    def decision_function(self, observations: np.ndarray) -> np.ndarray:
+        return self.model.decision_function(unpack_objects(observations))
 
 
 class SVMLearner(SklearnClassifierLearner):
