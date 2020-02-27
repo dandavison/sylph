@@ -1,5 +1,7 @@
 .mypy_cache/
 .tox/
 .venv
+build/
+dist/
 *.egg-info
 __pycache__/
