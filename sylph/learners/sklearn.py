@@ -7,6 +7,7 @@ import sklearn.base
 from sylph.classifier import Classifier
 from sylph.dataset import DataSet
 from sylph.pipeline import Learner
+from sylph.utils.color import red
 from sylph.utils.numpy import unpack_objects
 
 
@@ -34,6 +35,7 @@ class SklearnClassifierLearner(Learner):
     classifier_cls = SklearnClassifier
 
     def __call__(self, dataset: DataSet) -> SklearnClassifier:
+        print(red(f"Running {type(self).__name__} on {dataset}"))
         X, y = dataset.observations, dataset.labels
         X, y = map(unpack_objects, (X, y))
         model = self.model.fit(X, y)

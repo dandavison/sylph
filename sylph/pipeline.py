@@ -15,6 +15,7 @@ from sklearn.metrics import confusion_matrix
 
 from sylph.classifier import Classifier
 from sylph.dataset import DataSet
+from sylph.utils.color import red
 from sylph.utils.modal_values import get_modal_values
 
 
@@ -41,6 +42,7 @@ class Transform:
         raise NotImplementedError
 
     def __call__(self, dataset: DataSet) -> DataSet:
+        print(red(f"Running {type(self).__name__} on {dataset}"))
         observations, index_map = self.transform_observations(dataset.observations)
         if index_map is None:
             index_map = np.arange(len(observations))
